@@ -23,17 +23,11 @@ spec:
             - containerPort: 8080
           env:
             - name: APP_MESSAGE
-              valueFrom:
-                configMapKeyRef:
-                  name: nginx-config
-                  key: APP_MESSAGE
-            - name: USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: nginx-secret
-                  key: USERNAME
-            - name: PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: nginx-secret
-                  key: PASSWORD
+              value: "Bienvenue sur Nginx"
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
