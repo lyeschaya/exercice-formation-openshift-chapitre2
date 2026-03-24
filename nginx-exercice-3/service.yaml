@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-unprivileged
+  namespace: exercice-nginx-3
+spec:
+  selector:
+    app: nginx-unprivileged
+  ports:
+    - port: 8080
+      targetPort: 8080
