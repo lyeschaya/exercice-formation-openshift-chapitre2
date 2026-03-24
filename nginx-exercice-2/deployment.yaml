@@ -23,6 +23,51 @@ spec:
             - containerPort: 8080
           env:
             - name: APP_MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: nginx-config
+                  key: APP_MESSAGE
+            - name: USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: nginx-secret
+                  key: USERNAME
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nginx-secret
+                  key: PASSWORD
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128MiiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-unprivileged
+  namespace: exercice-nginx-2
+  labels:
+    app: nginx-unprivileged
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-unprivileged
+  template:
+    metadata:
+      labels:
+        app: nginx-unprivileged
+        deployment: nginx-unprivileged
+    spec:
+      containers:
+        - name: nginx-unprivileged
+          image: nginxinc/nginx-unprivileged:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_MESSAGE
               value: "Bienvenue sur Nginx"
           resources:
             limits:
