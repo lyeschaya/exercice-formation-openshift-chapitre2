@@ -1,12 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginx-unprivileged
-
+  name: nginx-unprivileged-2
 spec:
   selector:
-    app: nginx-unprivileged
-
+    app: nginx-unprivileged-2
   ports:
   - port: 8080
     targetPort: 8080
