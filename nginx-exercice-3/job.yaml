@@ -2,7 +2,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: demo-job-console
-  namespace: exercice-nginx-3
 spec:
   template:
     spec:

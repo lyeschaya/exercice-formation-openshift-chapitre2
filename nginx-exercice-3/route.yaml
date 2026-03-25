@@ -2,7 +2,6 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: nginx-route-3
-  namespace: exercice-nginx-3
 spec:
   to:
     kind: Service

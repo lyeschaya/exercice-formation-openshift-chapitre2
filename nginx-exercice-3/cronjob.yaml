@@ -2,7 +2,6 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: demo-cronjob-console
-  namespace: exercice-nginx-3
 spec:
   schedule: "*/1 * * * *"
   successfulJobsHistoryLimit: 3
