@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Neutron IT - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f8fafc; color: #334155; }
+        .header { background: white; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; }
+        .brand { font-size: 1.1rem; font-weight: 800; color: #0f172a; }
+        .pill { background: #dcfce7; color: #166534; font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+        .container { max-width: 750px; margin: 32px auto; padding: 0 20px; }
+        h1 { font-size: 1.6rem; color: #0f172a; margin-bottom: 24px; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .badge { padding: 3px 8px; border-radius: 4px; color: white; font-size: 11px; }
+        .bg-job { background: #7c3aed; }
+        .bg-cron { background: #d97706; }
+        .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .item:last-child { border-bottom: none; }
+        .val-job { background: #ede9fe; color: #5b21b6; padding: 2px 10px; border-radius: 6px; }
+        .val-cron { background: #fef3c7; color: #92400e; padding: 2px 10px; border-radius: 6px; }
+        .val-success { background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 6px; }
+        .val-running { background: #dbeafe; color: #1e40af; padding: 2px 10px; border-radius: 6px; }
+        .terminal { background: #1e1e2e; border-radius: 8px; padding: 12px; margin-top: 12px; font-family: monospace; font-size: 12px; color: #a6e3a1; min-height: 50px; }
+        .btn-job { margin-top: 12px; background: #7c3aed; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .btn-cron { margin-top: 12px; background: #d97706; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        #jobs-list, #cronjobs-list { margin-top: 12px; }
+        .footer { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 32px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="brand">NEUTRON IT</div>
+        <div class="pill">FLASK + OPENSHIFT</div>
+    </header>
+    <div class="container">
+        <h1>Dashboard Job & CronJob</h1>
+
+        <div class="card">
+            <div class="card-header"><span class="badge bg-job">JOB</span> Jobs</div>
+            <div id="jobs-list"><div class="terminal">Chargement...</div></div>
+            <button class="btn-job" onclick="triggerJob()">Déclencher un Job</button>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><span class="badge bg-cron">CRONJOB</span> CronJobs</div>
+            <div id="cronjobs-list"><div class="terminal">Chargement...</div></div>
+        </div>
+
+        <footer class="footer">Neutron IT | OpenShift Lab 2026</footer>
+    </div>
+
+    <script>
+        function loadJobs() {
+            fetch('/api/jobs')
+                .then(r => r.json())
+                .then(jobs => {
+                    const el = document.getElementById('jobs-list');
+                    if (jobs.length === 0) {
+                        el.innerHTML = '<div class="terminal">Aucun job trouvé</div>';
+                        return;
+                    }
+                    el.innerHTML = jobs.map(j => `
+                        <div class="item">
+                            <span style="font-family:monospace">${j.name}</span>
+                            <span class="${j.status === 'Complete' ? 'val-success' : j.status === 'Running' ? 'val-running' : 'val-job'}">${j.status}</span>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function loadCronJobs() {
+            fetch('/api/cronjobs')
+                .then(r => r.json())
+                .then(cjs => {
+                    const el = document.getElementById('cronjobs-list');
+                    if (cjs.length === 0) {
+                        el.innerHTML = '<div class="terminal">Aucun cronjob trouvé</div>';
+                        return;
+                    }
+                    el.innerHTML = cjs.map(cj => `
+                        <div class="item">
+                            <span style="font-family:monospace">${cj.name}</span>
+                            <span class="val-cron">${cj.schedule}</span>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function triggerJob() {
+            fetch('/api/trigger-job', {method: 'POST'})
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.status);
+                    setTimeout(loadJobs, 2000);
+                });
+        }
+
+        loadJobs();
+        loadCronJobs();
+        setInterval(loadJobs, 10000);
+    </script>
+</body>
+</html>

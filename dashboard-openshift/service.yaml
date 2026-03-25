@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard-openshift
+spec:
+  selector:
+    app: dashboard-openshift
+  ports:
+    - port: 8080
+      targetPort: 8080
