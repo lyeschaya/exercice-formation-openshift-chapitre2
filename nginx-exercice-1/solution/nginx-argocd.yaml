@@ -1,11 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nginx-exercice-1
+  name: formation-exercice-1
   namespace: openshift-gitops
 spec:
   destination:
-    namespace: exercice-nginx-1
+    namespace: formation-openshift
     server: https://kubernetes.default.svc
   source:
     repoURL: https://github.com/lyeschaya/exercice-formation-openshift-chapitre2.git
