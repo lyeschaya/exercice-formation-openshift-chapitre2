@@ -512,7 +512,7 @@
                             <div class="item-actions">
                                 <span class="schedule-pill">${cj.schedule}</span>
                                 <button class="btn btn-log" onclick="showCronLogs('${cj.name}')">Logs</button>
-                                <button class="btn btn-cron" onclick="triggerCronJob('${cj.name}')">Déclencher</button>
+                                <button class="btn btn-cron" onclick="triggerCronJob('${cj.name}', this)">Déclencher</button>
                             </div>
                         </div>
                     `).join('');
@@ -624,9 +624,13 @@
         }
 
         let isTriggeringCron = false;
-        function triggerCronJob(name) {
+        function triggerCronJob(name, btn) {
             if (isTriggeringCron) return;
             isTriggeringCron = true;
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'En cours...';
+            }
             fetch('/api/trigger-cronjob/' + name, { method: 'POST' })
                 .then(r => r.json())
                 .then(data => {
@@ -641,6 +645,10 @@
                 })
                 .finally(() => {
                     isTriggeringCron = false;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = 'Déclencher';
+                    }
                 });
         }
 
