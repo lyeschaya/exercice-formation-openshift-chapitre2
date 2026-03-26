@@ -24,11 +24,16 @@ def get_jobs():
     jobs = batch_v1.list_namespaced_job(NAMESPACE)
     result = []
     for job in jobs.items:
-        # Exclure les jobs créés par les CronJobs
+        # Exclure les jobs créés par les CronJobs (Scheduled)
         owner_refs = job.metadata.owner_references or []
-        is_cronjob = any(ref.kind == "CronJob" for ref in owner_refs)
-        if is_cronjob:
+        is_scheduled = any(ref.kind == "CronJob" for ref in owner_refs)
+        # Exclure aussi les déclenchements manuels via le dashboard
+        labels = job.metadata.labels or {}
+        is_manual_cron = labels.get("type", "").startswith("cron-manual-")
+        
+        if is_scheduled or is_manual_cron:
             continue
+            
         if job.status.succeeded:
             status = "Complete"
         elif job.status.active:
@@ -49,20 +54,32 @@ def get_cronjob_jobs():
     result = []
     for job in jobs.items:
         owner_refs = job.metadata.owner_references or []
-        is_cronjob = any(ref.kind == "CronJob" for ref in owner_refs)
-        if not is_cronjob:
+        is_scheduled = any(ref.kind == "CronJob" for ref in owner_refs)
+        
+        labels = job.metadata.labels or {}
+        is_manual_cron = labels.get("type", "").startswith("cron-manual-")
+        
+        if not (is_scheduled or is_manual_cron):
             continue
+            
         if job.status.succeeded:
             status = "Complete"
         elif job.status.active:
             status = "Running"
         else:
             status = "Failed"
+            
+        cron_name = "N/A"
+        if is_scheduled:
+            cron_name = owner_refs[0].name
+        elif is_manual_cron:
+            cron_name = labels.get("type").replace("cron-manual-", "")
+            
         result.append({
             "name": job.metadata.name,
             "status": status,
             "start": str(job.status.start_time) if job.status.start_time else "N/A",
-            "cronjob": owner_refs[0].name if owner_refs else "N/A"
+            "cronjob": cron_name
         })
     return jsonify(result)
 
