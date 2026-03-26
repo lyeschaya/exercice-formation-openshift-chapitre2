@@ -425,6 +425,24 @@
             </div>
         </div>
 
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="badge bg-cron">EXECUTION</span>
+                    <span style="font-size:13px;color:#7E82AD;text-transform:uppercase;letter-spacing:1px;">Exécutions CronJob</span>
+                </div>
+                <button class="refresh-btn" onclick="loadCronJobJobs()">Actualiser</button>
+            </div>
+            <div id="cronjob-jobs-list"></div>
+            <div id="cronjob-jobs-terminal" class="cron-terminal">
+                <div class="terminal-header">
+                    <span id="cronjob-jobs-terminal-title">Logs Exécution</span>
+                    <span class="terminal-close" onclick="closeCronJobJobsTerminal()">Fermer X</span>
+                </div>
+                <div id="cronjob-jobs-terminal-content"></div>
+            </div>
+        </div>
+
         <footer class="footer">Neutron IT | OpenShift Lab 2026</footer>
     </div>
 
@@ -529,11 +547,57 @@
                 });
         }
 
-        function deleteJob(jobName) {
+        function loadCronJobJobs() {
+            fetch('/api/cronjob-jobs')
+                .then(r => r.json())
+                .then(jobs => {
+                    const el = document.getElementById('cronjob-jobs-list');
+                    if (jobs.length === 0) {
+                        el.innerHTML = '<p style="color:var(--text-sub);font-size:13px;padding:10px 0;">Aucune exécution trouvée</p>';
+                        return;
+                    }
+                    el.innerHTML = jobs.map(j => `
+                        <div class="item">
+                            <div>
+                                <div class="item-name">${j.name}</div>
+                                <div class="item-info">CronJob : ${j.cronjob} | Démarré : ${j.start}</div>
+                            </div>
+                            <div class="item-actions">
+                                <span class="status ${j.status === 'Complete' ? 'status-complete' : j.status === 'Running' ? 'status-running' : 'status-failed'}">${j.status}</span>
+                                <button class="btn btn-log" onclick="showCronJobJobLogs('${j.name}')">Logs</button>
+                                <button class="btn btn-del" onclick="deleteJob('${j.name}', true)">Supprimer</button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function showCronJobJobLogs(jobName) {
+            const terminal = document.getElementById('cronjob-jobs-terminal');
+            const content = document.getElementById('cronjob-jobs-terminal-content');
+            const title = document.getElementById('cronjob-jobs-terminal-title');
+            terminal.classList.add('active');
+            title.textContent = '$ Logs Exécution : ' + jobName;
+            content.textContent = 'Chargement...';
+            fetch('/api/logs/' + jobName)
+                .then(r => r.json())
+                .then(data => {
+                    content.textContent = data.logs || 'Aucun log disponible';
+                });
+        }
+
+        function closeCronJobJobsTerminal() {
+            document.getElementById('cronjob-jobs-terminal').classList.remove('active');
+        }
+
+        function deleteJob(jobName, isCronJob = false) {
             if (!confirm('Supprimer le job ' + jobName + ' ?')) return;
             fetch('/api/delete-job/' + jobName, { method: 'DELETE' })
                 .then(r => r.json())
-                .then(() => loadJobs());
+                .then(() => {
+                    if (isCronJob) loadCronJobJobs();
+                    else loadJobs();
+                });
         }
 
         let isTriggering = false;
@@ -570,7 +634,10 @@
                     alert.className = 'alert active ' + (data.status.includes('Limite') ? 'alert-error' : 'alert-success');
                     alert.textContent = data.status;
                     setTimeout(() => alert.classList.remove('active'), 4000);
-                    if (!data.status.includes('Limite')) setTimeout(loadJobs, 2000);
+                    if (!data.status.includes('Limite')) {
+                        setTimeout(loadCronJobs, 2000);
+                        setTimeout(loadCronJobJobs, 2000);
+                    }
                 })
                 .finally(() => {
                     isTriggeringCron = false;
@@ -579,7 +646,8 @@
 
         loadJobs();
         loadCronJobs();
-        setInterval(() => { loadJobs(); loadCronJobs(); }, 10000);
+        loadCronJobJobs();
+        setInterval(() => { loadJobs(); loadCronJobs(); loadCronJobJobs(); }, 10000);
     </script>
 </body>
 
