@@ -18,6 +18,11 @@ def get_jobs():
     jobs = batch_v1.list_namespaced_job(NAMESPACE)
     result = []
     for job in jobs.items:
+        # Exclure les jobs créés par les CronJobs
+        owner_refs = job.metadata.owner_references or []
+        is_cronjob = any(ref.kind == "CronJob" for ref in owner_refs)
+        if is_cronjob:
+            continue
         if job.status.succeeded:
             status = "Complete"
         elif job.status.active:
@@ -28,6 +33,30 @@ def get_jobs():
             "name": job.metadata.name,
             "status": status,
             "start": str(job.status.start_time) if job.status.start_time else "N/A"
+        })
+    return jsonify(result)
+
+@app.route("/api/cronjob-jobs")
+def get_cronjob_jobs():
+    batch_v1 = client.BatchV1Api()
+    jobs = batch_v1.list_namespaced_job(NAMESPACE)
+    result = []
+    for job in jobs.items:
+        owner_refs = job.metadata.owner_references or []
+        is_cronjob = any(ref.kind == "CronJob" for ref in owner_refs)
+        if not is_cronjob:
+            continue
+        if job.status.succeeded:
+            status = "Complete"
+        elif job.status.active:
+            status = "Running"
+        else:
+            status = "Failed"
+        result.append({
+            "name": job.metadata.name,
+            "status": status,
+            "start": str(job.status.start_time) if job.status.start_time else "N/A",
+            "cronjob": owner_refs[0].name if owner_refs else "N/A"
         })
     return jsonify(result)
 
