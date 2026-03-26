@@ -73,7 +73,8 @@ def get_cronjob_jobs():
         if is_scheduled:
             cron_name = owner_refs[0].name
         elif is_manual_cron:
-            cron_name = labels.get("type").replace("cron-manual-", "")
+            type_label = labels.get("type")
+            cron_name = type_label.replace("cron-manual-", "") if type_label else "N/A"
             
         result.append({
             "name": job.metadata.name,
