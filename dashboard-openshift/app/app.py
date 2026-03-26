@@ -137,5 +137,28 @@ def trigger_cronjob(cron_name):
     batch_v1.create_namespaced_job(NAMESPACE, job)
     return jsonify({"status": f"CronJob {cron_name} déclenché !", "name": job_name})
 
+@app.route("/api/cronjob-logs/<cron_name>")
+def get_cronjob_logs(cron_name):
+    batch_v1 = client.BatchV1Api()
+    core_v1 = client.CoreV1Api()
+    jobs = batch_v1.list_namespaced_job(NAMESPACE, label_selector=f"job-name={cron_name}")
+    if not jobs.items:
+        jobs = batch_v1.list_namespaced_job(NAMESPACE)
+        cron_jobs = [j for j in jobs.items if cron_name in j.metadata.name]
+        if not cron_jobs:
+            return jsonify({"logs": "Aucun job trouvé pour ce CronJob"})
+        latest = sorted(cron_jobs, key=lambda j: j.metadata.creation_timestamp)[-1]
+        job_name = latest.metadata.name
+    else:
+        job_name = jobs.items[-1].metadata.name
+    pods = core_v1.list_namespaced_pod(NAMESPACE, label_selector=f"job-name={job_name}")
+    if not pods.items:
+        return jsonify({"logs": "Aucun pod trouvé"})
+    try:
+        logs = core_v1.read_namespaced_pod_log(pods.items[0].metadata.name, NAMESPACE)
+        return jsonify({"logs": logs})
+    except Exception as e:
+        return jsonify({"logs": str(e)})
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
