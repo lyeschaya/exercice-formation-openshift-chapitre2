@@ -479,7 +479,7 @@
 
     <div class="container">
         <h1>Dashboard Job & CronJob</h1>
-        <p class="subtitle">Namespace : formation-openshift — Actualisation toutes les 10s</p>
+        <p class="subtitle" style="margin-bottom: 24px;">Namespace : formation-openshift — Actualisation toutes les 2s</p>
 
         <div class="grid">
             <div class="stat">
@@ -959,9 +959,9 @@
             fetch('/api/metrics')
                 .then(r => r.json())
                 .then(data => {
-                    document.getElementById('cpu-usage').textContent = data.current.cpu_cores + ' cores';
+                    document.getElementById('cpu-usage').innerHTML = data.current.cpu_cores + ' <span style="font-size:18px;font-weight:600;color:var(--text-muted)">cores</span>';
                     document.getElementById('cpu-percent').textContent = data.current.cpu_percent + '% de la limite';
-                    document.getElementById('mem-usage').textContent = data.current.memory + ' Mi';
+                    document.getElementById('mem-usage').innerHTML = data.current.memory + ' <span style="font-size:18px;font-weight:600;color:var(--text-muted)">Mi</span>';
                     document.getElementById('mem-percent').textContent = data.current.mem_percent + '% de la limite';
                     
                     if (data.history.length > 0) {
