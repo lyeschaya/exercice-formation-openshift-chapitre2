@@ -103,6 +103,53 @@ def get_cronjobs():
         })
     return jsonify(result)
 
+@app.route("/api/metrics")
+def get_metrics():
+    custom_api = client.CustomObjectsApi()
+    try:
+        # Tenter de récupérer les métriques des pods
+        pods_metrics = custom_api.list_namespaced_custom_object(
+            group="metrics.k8s.io",
+            version="v1beta1",
+            namespace=NAMESPACE,
+            plural="pods"
+        )
+        
+        total_cpu_n = 0
+        total_mem_kb = 0
+        
+        for pod in pods_metrics.get("items", []):
+            for container in pod.get("containers", []):
+                usage = container.get("usage", {})
+                
+                # CPU (en nanocores par défaut)
+                cpu = usage.get("cpu", "0n")
+                if cpu.endswith("n"):
+                    total_cpu_n += int(cpu[:-1])
+                elif cpu.endswith("u"):
+                    total_cpu_n += int(cpu[:-1]) * 1000
+                elif cpu.endswith("m"):
+                    total_cpu_n += int(cpu[:-1]) * 1000000
+                else:
+                    total_cpu_n += int(cpu) * 1000000000
+                    
+                # RAM (en KiB par défaut)
+                mem = usage.get("memory", "0Ki")
+                if mem.endswith("Ki"):
+                    total_mem_kb += int(mem[:-2])
+                elif mem.endswith("Mi"):
+                    total_mem_kb += int(mem[:-2]) * 1024
+                elif mem.endswith("Gi"):
+                    total_mem_kb += int(mem[:-2]) * 1024 * 1024
+                    
+        return jsonify({
+            "cpu": f"{total_cpu_n / 1000000:.1f}m",
+            "memory": f"{total_mem_kb / 1024:.1f} Mi"
+        })
+    except Exception as e:
+        # Fallback si metrics-server n'est pas dispo
+        return jsonify({"cpu": "N/A", "memory": "N/A", "error": str(e)})
+
 @app.route("/api/logs/<pod_name>")
 def get_logs(pod_name):
     core_v1 = client.CoreV1Api()

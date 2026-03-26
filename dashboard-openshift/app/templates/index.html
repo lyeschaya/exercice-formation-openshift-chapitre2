@@ -110,7 +110,7 @@
 
         .grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 20px;
         }
@@ -487,6 +487,14 @@
             <div class="stat">
                 <div class="stat-label">CronJobs actifs</div>
                 <div class="stat-value" id="total-cronjobs">—</div>
+            </div>
+            <div class="stat" style="border-left-color: var(--secondary)">
+                <div class="stat-label">Consommation CPU</div>
+                <div class="stat-value" id="cpu-usage" style="color:var(--secondary)">—</div>
+            </div>
+            <div class="stat" style="border-left-color: var(--secondary)">
+                <div class="stat-label">Utilisation RAM</div>
+                <div class="stat-value" id="mem-usage" style="color:var(--secondary)">—</div>
             </div>
         </div>
 
@@ -867,10 +875,24 @@
                 });
         }
 
-        loadJobs();
-        loadCronJobs();
-        loadCronJobJobs();
-        setInterval(() => { loadJobs(); loadCronJobs(); loadCronJobJobs(); }, 5000);
+        function loadMetrics() {
+            fetch('/api/metrics')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('cpu-usage').textContent = data.cpu;
+                    document.getElementById('mem-usage').textContent = data.memory;
+                });
+        }
+
+        function refreshAll() {
+            loadJobs();
+            loadCronJobs();
+            loadCronJobJobs();
+            loadMetrics();
+        }
+
+        refreshAll();
+        setInterval(refreshAll, 5000);
     </script>
 </body>
 
