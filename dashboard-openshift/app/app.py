@@ -201,6 +201,51 @@ def get_metrics():
         "history": list(METRICS_HISTORY)
     })
 
+@app.route("/api/pod-metrics")
+def get_pod_metrics():
+    custom_api = client.CustomObjectsApi()
+    try:
+        metrics = custom_api.list_namespaced_custom_object(
+            group="metrics.k8s.io",
+            version="v1beta1",
+            namespace=NAMESPACE,
+            plural="pods"
+        )
+        result = []
+        for pod in metrics.get("items", []):
+            containers = pod.get("containers", [])
+            pod_cpu_n = 0.0
+            pod_mem_kb = 0.0
+            for container in containers:
+                cpu = container["usage"]["cpu"]
+                mem = container["usage"]["memory"]
+                if cpu.endswith("n"):
+                    pod_cpu_n += float(cpu[:-1])
+                elif cpu.endswith("u"):
+                    pod_cpu_n += float(cpu[:-1]) * 1000
+                elif cpu.endswith("m"):
+                    pod_cpu_n += float(cpu[:-1]) * 1000000
+                else:
+                    try: pod_cpu_n += float(cpu) * 1000000000
+                    except: pass
+                if mem.endswith("Ki"):
+                    pod_mem_kb += float(mem[:-2])
+                elif mem.endswith("Mi"):
+                    pod_mem_kb += float(mem[:-2]) * 1024
+                elif mem.endswith("Gi"):
+                    pod_mem_kb += float(mem[:-2]) * 1024 * 1024
+                else:
+                    try: pod_mem_kb += float(mem)
+                    except: pass
+            result.append({
+                "pod": pod["metadata"]["name"],
+                "cpu": round(pod_cpu_n / 1000000, 2),
+                "memory": round(pod_mem_kb / 1024, 2)
+            })
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
 @app.route("/api/logs/<pod_name>")
 def get_logs(pod_name):
     core_v1 = client.CoreV1Api()
