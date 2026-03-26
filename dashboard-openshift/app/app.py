@@ -8,6 +8,12 @@ NAMESPACE = os.getenv("NAMESPACE", "formation-openshift")
 MAX_MANUAL_JOBS = 3
 MAX_TOTAL_JOBS = 10
 
+# Configuration modifiable pour les Jobs manuels
+MANUAL_JOB_CONFIG = {
+    "image": "nginxinc/nginx-unprivileged@sha256:731f382bbad9a874f9f27db9c82d9e671e603e2210386a8e2b6da36cf336fa75",
+    "command": "echo Bonjour depuis mon Job OpenShift"
+}
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -124,8 +130,8 @@ def trigger_job():
                 spec=client.V1PodSpec(
                     containers=[client.V1Container(
                         name="job",
-                        image="nginxinc/nginx-unprivileged@sha256:731f382bbad9a874f9f27db9c82d9e671e603e2210386a8e2b6da36cf336fa75",
-                        command=["sh", "-c", "echo Bonjour depuis mon Job OpenShift"]
+                        image=MANUAL_JOB_CONFIG["image"],
+                        command=["sh", "-c", MANUAL_JOB_CONFIG["command"]]
                     )],
                     restart_policy="Never"
                 )
@@ -188,6 +194,45 @@ def get_cronjob_logs(cron_name):
         return jsonify({"logs": logs})
     except Exception as e:
         return jsonify({"logs": str(e)})
+
+@app.route("/api/cronjob-spec/<name>")
+def get_cronjob_spec(name):
+    batch_v1 = client.BatchV1Api()
+    cj = batch_v1.read_namespaced_cron_job(name, NAMESPACE)
+    # On renvoie juste la partie intéressante : schedule et template command
+    return jsonify({
+        "schedule": cj.spec.schedule,
+        "command": cj.spec.job_template.spec.template.spec.containers[0].command[2] if len(cj.spec.job_template.spec.template.spec.containers[0].command) > 2 else ""
+    })
+
+@app.route("/api/update-cronjob/<name>", methods=["POST"])
+def update_cronjob(name):
+    from flask import request
+    data = request.json
+    batch_v1 = client.BatchV1Api()
+    cj = batch_v1.read_namespaced_cron_job(name, NAMESPACE)
+    
+    if "schedule" in data:
+        cj.spec.schedule = data["schedule"]
+    if "command" in data:
+        cj.spec.job_template.spec.template.spec.containers[0].command = ["sh", "-c", data["command"]]
+        
+    batch_v1.patch_namespaced_cron_job(name, NAMESPACE, cj)
+    return jsonify({"status": "CronJob mis à jour !"})
+
+@app.route("/api/manual-job-config")
+def get_manual_job_config():
+    return jsonify(MANUAL_JOB_CONFIG)
+
+@app.route("/api/update-manual-job-config", methods=["POST"])
+def update_manual_job_config():
+    from flask import request
+    data = request.json
+    if "command" in data:
+        MANUAL_JOB_CONFIG["command"] = data["command"]
+    if "image" in data:
+        MANUAL_JOB_CONFIG["image"] = data["image"]
+    return jsonify({"status": "Configuration Job manuel mise à jour !"})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)

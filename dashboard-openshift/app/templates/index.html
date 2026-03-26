@@ -356,6 +356,72 @@
         .cron-terminal.active {
             display: block;
         }
+
+        /* Editor Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .editor-label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .editor-input {
+            width: 100%;
+            background: #0a0f1e;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #22c55e;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 13px;
+            margin-bottom: 16px;
+            outline: none;
+        }
+
+        .editor-textarea {
+            height: 120px;
+            resize: vertical;
+        }
     </style>
 </head>
 
@@ -402,6 +468,7 @@
             </div>
             <div class="actions">
                 <button class="btn btn-trigger" onclick="triggerJob()">+ Déclencher un Job</button>
+                <button class="btn btn-log" onclick="openJobConfig()">⚙️ Config</button>
             </div>
         </div>
 
@@ -444,6 +511,46 @@
         </div>
 
         <footer class="footer">Neutron IT | OpenShift Lab 2026</footer>
+    </div>
+
+    <!-- Modal Édition CronJob -->
+    <div id="modal-cron" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Modifier CronJob : <span id="edit-cron-name"></span></div>
+                <span class="terminal-close" onclick="closeModal('modal-cron')">X</span>
+            </div>
+            <label class="editor-label">Schedule (Cron)</label>
+            <input type="text" id="edit-cron-schedule" class="editor-input">
+            
+            <label class="editor-label">Commande (bash)</label>
+            <textarea id="edit-cron-command" class="editor-input editor-textarea"></textarea>
+            
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button class="btn btn-log" onclick="closeModal('modal-cron')">Annuler</button>
+                <button class="btn btn-trigger" onclick="saveCronConfig()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Configuration Job Manuel -->
+    <div id="modal-job-config" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Configuration Job Manuel</div>
+                <span class="terminal-close" onclick="closeModal('modal-job-config')">X</span>
+            </div>
+            <label class="editor-label">Image Docker</label>
+            <input type="text" id="edit-job-image" class="editor-input">
+            
+            <label class="editor-label">Commande (bash)</label>
+            <textarea id="edit-job-command" class="editor-input editor-textarea"></textarea>
+            
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button class="btn btn-log" onclick="closeModal('modal-job-config')">Annuler</button>
+                <button class="btn btn-trigger" onclick="saveJobConfig()">Enregistrer</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -512,6 +619,7 @@
                             <div class="item-actions">
                                 <span class="schedule-pill">${cj.schedule}</span>
                                 <button class="btn btn-log" onclick="showCronLogs('${cj.name}')">Logs</button>
+                                <button class="btn btn-log" onclick="openCronEditor('${cj.name}')">Éditer</button>
                                 <button class="btn btn-cron" onclick="triggerCronJob('${cj.name}', this)">Déclencher</button>
                             </div>
                         </div>
@@ -621,6 +729,61 @@
                     btn.disabled = false;
                     btn.textContent = '+ Déclencher un Job';
                 });
+        }
+
+        function openCronEditor(name) {
+            document.getElementById('edit-cron-name').textContent = name;
+            fetch('/api/cronjob-spec/' + name)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('edit-cron-schedule').value = data.schedule;
+                    document.getElementById('edit-cron-command').value = data.command;
+                    document.getElementById('modal-cron').classList.add('active');
+                });
+        }
+
+        function saveCronConfig() {
+            const name = document.getElementById('edit-cron-name').textContent;
+            const data = {
+                schedule: document.getElementById('edit-cron-schedule').value,
+                command: document.getElementById('edit-cron-command').value
+            };
+            fetch('/api/update-cronjob/' + name, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(() => {
+                closeModal('modal-cron');
+                loadCronJobs();
+            });
+        }
+
+        function openJobConfig() {
+            fetch('/api/manual-job-config')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('edit-job-image').value = data.image;
+                    document.getElementById('edit-job-command').value = data.command;
+                    document.getElementById('modal-job-config').classList.add('active');
+                });
+        }
+
+        function saveJobConfig() {
+            const data = {
+                image: document.getElementById('edit-job-image').value,
+                command: document.getElementById('edit-job-command').value
+            };
+            fetch('/api/update-manual-job-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(() => {
+                closeModal('modal-job-config');
+            });
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
         }
 
         let isTriggeringCron = false;
