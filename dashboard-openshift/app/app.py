@@ -11,7 +11,7 @@ MAX_TOTAL_JOBS = 10
 # Configuration modifiable pour les Jobs manuels
 MANUAL_JOB_CONFIG = {
     "image": "nginxinc/nginx-unprivileged@sha256:731f382bbad9a874f9f27db9c82d9e671e603e2210386a8e2b6da36cf336fa75",
-    "command": "echo Bonjour depuis mon Job OpenShift"
+    "command": "echo 'Démarrage stress CPU...'; for i in $(seq 1 4); do dd if=/dev/urandom bs=1M count=512 | md5sum &; done; wait; echo 'Terminé !'"
 }
 
 @app.route("/")
@@ -188,7 +188,7 @@ def collect_metrics_loop():
             })
         except Exception as e:
             print(f"Metrics collection failed: {e}")
-        time.sleep(2) # Plus rapide pour le "temps réel"
+        time.sleep(1)
 
 
 # Démarrer le collector dans un thread séparé
