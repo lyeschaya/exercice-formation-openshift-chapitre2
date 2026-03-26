@@ -3,7 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Neutron IT - Dashboard</title>
+    <title>NEUTRON IT - Infrastructure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
             /* Palette de base */
@@ -12,23 +15,23 @@
         }
 
         :root[data-theme="dark"] {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --border: #334155;
-            --text: #f1f5f9;
-            --text-muted: #94a3b8;
-            --text-sub: #475569;
-            --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+            --bg: #05070a;
+            --card: #0d1117;
+            --border: rgba(126, 130, 173, 0.2);
+            --text: #f0f6fc;
+            --text-muted: #8b949e;
+            --text-sub: #484f58;
+            --shadow: 0 8px 24px rgba(0,0,0,0.5);
         }
 
         :root[data-theme="light"] {
-            --bg: #f8fafc;
+            --bg: #f6f8fa;
             --card: #ffffff;
-            --border: #e2e8f0;
-            --text: #1e293b;
-            --text-muted: #64748b;
-            --text-sub: #94a3b8;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --border: #d0d7de;
+            --text: #1f2328;
+            --text-muted: #656d76;
+            --text-sub: #afb8c1;
+            --shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
         * {
@@ -38,10 +41,11 @@
         }
 
         body {
-            font-family: -apple-system, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
-            transition: all 0.3s;
+            transition: background 0.4s, color 0.4s;
+            line-height: 1.5;
         }
 
         .header {
