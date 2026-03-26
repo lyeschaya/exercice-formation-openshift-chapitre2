@@ -118,6 +118,33 @@ def collect_metrics_loop():
                 plural="pods"
             )
             
+            total_cpu_n = 0.0
+            total_mem_kb = 0.0
+            
+            for pod in pods_metrics.get("items", []):
+                for container in pod.get("containers", []):
+                    usage = container.get("usage", {})
+                    
+                    cpu = usage.get("cpu", "0n")
+                    if cpu.endswith("n"):
+                        total_cpu_n += float(cpu[:-1])
+                    elif cpu.endswith("u"):
+                        total_cpu_n += float(cpu[:-1]) * 1000
+                    elif cpu.endswith("m"):
+                        total_cpu_n += float(cpu[:-1]) * 1000000
+                    else:
+                        try:
+                            total_cpu_n += float(cpu) * 1000000000
+                        except: pass
+                        
+                    mem = usage.get("memory", "0Ki")
+                    if mem.endswith("Ki"):
+                        total_mem_kb += float(mem[:-2])
+                    elif mem.endswith("Mi"):
+                        total_mem_kb += float(mem[:-2]) * 1024
+                    elif mem.endswith("Gi"):
+                        total_mem_kb += float(mem[:-2]) * 1024 * 1024
+            
             # Calculer les limites totales pour le pourcentage
             core_v1 = client.CoreV1Api()
             all_pods = core_v1.list_namespaced_pod(NAMESPACE)
