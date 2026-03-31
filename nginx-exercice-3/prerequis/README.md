@@ -1,102 +1,107 @@
 # Exercice 3 — Job et CronJob
 
 ## Contexte
+
 Dans cet exercice, vous allez apprendre à exécuter des tâches ponctuelles et planifiées sur OpenShift avec les ressources Job et CronJob.
+
 - **Job** : exécute une tâche une seule fois jusqu'à completion
 - **CronJob** : exécute une tâche de façon planifiée (comme cron Linux)
 
 ## Objectifs pédagogiques
+
 - Créer et exécuter un Job OpenShift
 - Créer un CronJob avec un schedule défini
 - Vérifier les logs d'exécution
 
 ## Prérequis
+
 - Avoir complété l'exercice 2
+- Être connecté au cluster OpenShift
 - Namespace : `formation-openshift`
 
 ## Instructions
 
-### Étape 1 — Créer le fichier job.yaml
+### Étape 1 — Créer le Job
 
-Créez un fichier `job.yaml` dans votre dossier de travail.
+- Aller dans **Workloads → Jobs**
+- Cliquer sur **Create Job**
+- Coller le YAML suivant dans l'éditeur :
 
-**Indices :**
-- Kind : `Job`
-- apiVersion : `batch/v1`
-- Nom du job : `demo-job-3`
-- Image : `nginxinc/nginx-unprivileged`
-- La commande doit afficher un message avec `echo`
-- Le pod ne doit pas redémarrer en cas d'échec (`restartPolicy: Never`)
-
-### Étape 2 — Appliquer le Job
-```bash
-oc apply -f job.yaml -n formation-openshift
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demo-job-console
+spec:
+  template:
+    spec:
+      containers:
+        - name: job
+          image: nginxinc/nginx-unprivileged@sha256:731f382bbad9a874f9f27db9c82d9e671e603e2210386a8e2b6da36cf336fa75
+          command: ["sh", "-c", "echo Bonjour depuis mon Job OpenShift"]
+      restartPolicy: Never
 ```
 
-### Étape 3 — Vérifier le Job
+- Cliquer **Create**
 
-**Indices :**
-- Utilisez `oc get jobs` pour voir le statut
-- Le statut attendu est `Complete`
+### Étape 2 — Vérifier les logs du Job
 
-### Étape 4 — Voir les logs du Job
+- Vérifier que le Job est en statut `Complete`
+- Cliquer sur **Pods**
+- Sélectionner le Pod créé par le Job
+- Ouvrir l'onglet **Logs**
+- Vous devriez voir : `Bonjour depuis mon Job OpenShift`
 
-**Indices :**
-- Utilisez `oc logs job/<nom-du-job>` pour voir les logs
-- Vous devriez voir le message affiché par la commande `echo`
+### Étape 3 — Créer le CronJob
 
-### Étape 5 — Créer le fichier cronjob.yaml
+- Aller dans **Workloads → CronJobs**
+- Cliquer sur **Create CronJob**
+- Coller le YAML suivant dans l'éditeur :
 
-Créez un fichier `cronjob.yaml` dans votre dossier de travail.
-
-**Indices :**
-- Kind : `CronJob`
-- apiVersion : `batch/v1`
-- Nom : `demo-cronjob-3`
-- Image : `nginxinc/nginx-unprivileged`
-- Schedule : toutes les minutes (`*/1 * * * *`)
-- La commande doit afficher un message avec `echo`
-- Le pod ne doit pas redémarrer (`restartPolicy: Never`)
-- **Important** : Pour ne pas consommer trop de ressources, limitez l'historique :
-  - `successfulJobsHistoryLimit: 3` → garde seulement les 3 derniers jobs réussis
-  - `failedJobsHistoryLimit: 1` → garde seulement le dernier job échoué
-
-### Étape 6 — Appliquer le CronJob
-```bash
-oc apply -f cronjob.yaml -n formation-openshift
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: demo-cronjob-console
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cronjob
+              image: nginxinc/nginx-unprivileged@sha256:731f382bbad9a874f9f27db9c82d9e671e603e2210386a8e2b6da36cf336fa75
+              command: ["sh", "-c", "echo CronJob OpenShift fonctionne"]
+          restartPolicy: Never
 ```
 
-### Étape 7 — Vérifier le CronJob
+- Cliquer **Create**
 
-**Indices :**
-- Utilisez `oc get cronjob` pour voir le schedule
-- Attendez 1 minute et utilisez `oc get jobs` pour voir les jobs créés automatiquement
+### Étape 4 — Vérifier le CronJob
 
-### Étape 8 — Tester manuellement le CronJob
+- Aller dans **Workloads → CronJobs**
+- Cliquer sur `demo-cronjob-console`
+- Cliquer sur l'onglet **Jobs**
+- Attendre 1 minute → un nouveau Job apparaît automatiquement
+- Cliquer sur un Job → **Pods** → **Logs**
+- Vous devriez voir : `CronJob OpenShift fonctionne`
 
-Sans attendre le schedule, déclenchez manuellement le CronJob.
+### Étape 5 — Tester manuellement le CronJob
 
-**Indices :**
-- Utilisez `oc create job` avec l'option `--from=cronjob/<nom>`
-- Vérifiez les logs du job créé
-
-### Étape 9 — Tester depuis la console OpenShift
-
-Pour le Job :
-1. Allez dans **Workloads** → **Jobs**
-2. Cliquez sur le job → onglet **Logs**
-3. Vous devriez voir le message affiché par la commande `echo`
-
-Pour le CronJob :
-1. Allez dans **Workloads** → **CronJobs**
-2. Cliquez sur le CronJob → onglet **Jobs**
-3. Attendez 1 minute → un nouveau Job apparaît automatiquement
+- Aller dans **Workloads → CronJobs**
+- Cliquer sur `demo-cronjob-console`
+- Cliquer sur **Actions → Create Job**
+- Vérifier les logs du Job créé
 
 ## Résultat attendu
-- Le Job est en status `Complete`
+
+- Le Job est en statut `Complete`
 - Le CronJob s'exécute toutes les minutes automatiquement
-- L'historique est limité à 3 jobs réussis et 1 job échoué
-- Les logs affichent le message attendu
+- Les logs affichent les messages attendus
 
 ## Bloqué ?
-Consultez le dossier `solution/` ou l'app ArgoCD `formation-exercice-3`.
+
+Consultez le dossier `solution/` ou demandez à votre formateur de basculer le path ArgoCD vers `nginx-exercice-3/solution`.
