@@ -1,93 +1,108 @@
-# # Exercice 2 — ConfigMap et Secret
+# Exercice 3 — Job et CronJob
 
 ## Contexte
-Dans cet exercice, vous allez apprendre à gérer la configuration d'une application nginx sur OpenShift en utilisant deux ressources Kubernetes :
-- **ConfigMap** : pour stocker des données de configuration non sensibles
-- **Secret** : pour stocker des données sensibles (mots de passe, tokens)
+
+Dans cet exercice, vous allez apprendre à exécuter des tâches ponctuelles et planifiées sur OpenShift avec les ressources Job et CronJob.
+
+- **Job** : exécute une tâche une seule fois jusqu'à completion
+- **CronJob** : exécute une tâche de façon planifiée (comme cron Linux)
 
 ## Objectifs pédagogiques
-- Comprendre la différence entre ConfigMap et Secret
-- Créer et injecter des variables d'environnement dans un pod
-- Vérifier que les variables sont bien accessibles dans le conteneur
+
+- Créer et exécuter un Job OpenShift
+- Créer un CronJob avec un schedule défini
+- Vérifier les logs d'exécution
 
 ## Prérequis
-- Avoir complété l'exercice 1
+
+- Avoir complété l'exercice 2
 - Être connecté au cluster OpenShift
 - Namespace : `formation-openshift`
 
 ## Instructions
 
-### Étape 1 — Créer le ConfigMap
-```bash
-oc create configmap nginx-config-2 --from-literal=APP_MESSAGE="Bienvenue dans NGINX avec ConfigMap" -n formation-openshift
-```
+### Étape 1 — Créer le Job
 
-### Étape 2 — Créer le Secret
-```bash
-oc create secret generic nginx-secret-2 --from-literal=USERNAME=admin --from-literal=PASSWORD=admin123 -n formation-openshift
-```
+- Aller dans **Workloads → Jobs**
+- Cliquer sur **Create Job**
+- Coller le YAML suivant dans l'éditeur :
 
-### Étape 3 — Compléter le deployment.yaml
-Ouvrez le fichier `deployment.yaml` et complétez la section `env` :
 ```yaml
-env:
-  - name: APP_MESSAGE
-    valueFrom:
-      configMapKeyRef:
-        name: nginx-config-2
-        key: APP_MESSAGE
-  - name: USERNAME
-    valueFrom:
-      secretKeyRef:
-        name: nginx-secret-2
-        key: USERNAME
-  - name: PASSWORD
-    valueFrom:
-      secretKeyRef:
-        name: nginx-secret-2
-        key: PASSWORD
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demo-job-console
+spec:
+  template:
+    spec:
+      containers:
+        - name: job
+          image: nginxinc/nginx-unprivileged@sha256:731f382bbad9a874f9f27db9c82d9e671e603e2210386a8e2b6da36cf336fa75
+          command: ["sh", "-c", "echo Bonjour depuis mon Job OpenShift"]
+      restartPolicy: Never
 ```
 
-### Étape 4 — Appliquer
-```bash
-oc apply -f deployment.yaml -f service.yaml -f route.yaml -n formation-openshift
+- Cliquer **Create**
+
+### Étape 2 — Vérifier les logs du Job
+
+- Vérifier que le Job est en statut `Complete`
+- Cliquer sur **Pods**
+- Sélectionner le Pod créé par le Job
+- Ouvrir l'onglet **Logs**
+- Vous devriez voir : `Bonjour depuis mon Job OpenShift`
+
+### Étape 3 — Créer le CronJob
+
+- Aller dans **Workloads → CronJobs**
+- Cliquer sur **Create CronJob**
+- Coller le YAML suivant dans l'éditeur :
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: demo-cronjob-console
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cronjob
+              image: nginxinc/nginx-unprivileged@sha256:731f382bbad9a874f9f27db9c82d9e671e603e2210386a8e2b6da36cf336fa75
+              command: ["sh", "-c", "echo CronJob OpenShift fonctionne"]
+          restartPolicy: Never
 ```
 
-### Étape 5 — Vérifier les pods
-```bash
-oc get pods -n formation-openshift
-```
+- Cliquer **Create**
 
-### Étape 6 — Tester le ConfigMap et le Secret
-Entrez dans le pod et vérifiez les variables :
-```bash
-oc exec -it <pod> -n formation-openshift -- env | grep -E "APP_MESSAGE|USERNAME|PASSWORD"
-```
+### Étape 4 — Vérifier le CronJob
 
-Résultat attendu :
-```
-APP_MESSAGE=Bienvenue dans NGINX avec ConfigMap
-USERNAME=admin
-PASSWORD=admin123
-```
+- Aller dans **Workloads → CronJobs**
+- Cliquer sur `demo-cronjob-console`
+- Cliquer sur l'onglet **Jobs**
+- Attendre 1 minute → un nouveau Job apparaît automatiquement
+- Cliquer sur un Job → **Pods** → **Logs**
+- Vous devriez voir : `CronJob OpenShift fonctionne`
 
-Ou testez variable par variable :
-```bash
-oc exec -it <pod> -n formation-openshift -- sh -c 'echo $APP_MESSAGE'
-oc exec -it <pod> -n formation-openshift -- sh -c 'echo $USERNAME'
-oc exec -it <pod> -n formation-openshift -- sh -c 'echo $PASSWORD'
-```
+### Étape 5 — Tester manuellement le CronJob
 
-### Étape 7 — Tester depuis la console OpenShift
-1. Allez dans **Workloads** → **Pods**
-2. Cliquez sur un pod → onglet **Terminal**
-3. Tapez :
-```bash
-echo $APP_MESSAGE
-echo $USERNAME
-echo $PASSWORD
-```
+- Aller dans **Workloads → CronJobs**
+- Cliquer sur `demo-cronjob-console`
+- Cliquer sur **Actions → Create Job**
+- Vérifier les logs du Job créé
+
+## Résultat attendu
+
+- Le Job est en statut `Complete`
+- Le CronJob s'exécute toutes les minutes automatiquement
+- Les logs affichent les messages attendus
 
 ## Bloqué ?
-Consultez le dossier `solution/` ou l'app ArgoCD `formation-exercice-2`.
+
+Consultez le dossier `solution/` ou demandez à votre formateur de basculer le path ArgoCD vers `nginx-exercice-3/solution`.
 
