@@ -7,3 +7,4 @@ resources:
   - route.yaml
   - job.yaml
   - cronjob.yaml
+  - configmap-nginx-dashboard-3.yaml
