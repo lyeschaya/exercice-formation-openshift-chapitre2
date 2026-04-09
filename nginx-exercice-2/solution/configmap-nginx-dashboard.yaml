@@ -242,13 +242,13 @@ data:
             const opts = {
                 method: method || "GET",
                 headers: {
-                    "Authorization": "Bearer "+TOKEN,
+                    "X-Api-Token": "Bearer "+TOKEN,
                     "Content-Type": "application/strategic-merge-patch+json",
                     "Accept": "application/json"
                 }
             };
             if (body) opts.body = JSON.stringify(body);
-            const r = await fetch(API_URL+path, opts);
+            const r = await fetch("/api-proxy" + path, opts);
             if (!r.ok) throw new Error(r.status+" — "+(await r.text()).slice(0,120));
             return r.json();
         }
