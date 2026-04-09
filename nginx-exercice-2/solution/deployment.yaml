@@ -15,6 +15,39 @@ spec:
         app: nginx-unprivileged-2
         deployment: nginx-unprivileged-2
     spec:
+      serviceAccountName: nginx-dashboard-sa
+
+      initContainers:
+        - name: envsubst
+          image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              export SA_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              envsubst '${APP_MESSAGE} ${USERNAME} ${SA_TOKEN} ${OPENSHIFT_API_URL}' \
+                < /template/index.html.template \
+                > /html/index.html
+              echo "HTML genere: APP_MESSAGE=${APP_MESSAGE}"
+          env:
+            - name: APP_MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: nginx-config-2
+                  key: APP_MESSAGE
+            - name: USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: nginx-secret-2
+                  key: USERNAME
+            - name: OPENSHIFT_API_URL
+              value: "https://api.neutron-sno-gpu.neutron-it.fr:6443"
+          volumeMounts:
+            - name: template-volume
+              mountPath: /template
+            - name: html-volume
+              mountPath: /html
+
       containers:
         - name: nginx-unprivileged-2
           image: nginxinc/nginx-unprivileged@sha256:731f382bbad9a874f9f27db9c82d9e671e603e2210386a8e2b6da36cf336fa75
@@ -38,8 +71,7 @@ spec:
                   key: PASSWORD
           volumeMounts:
             - name: html-volume
-              mountPath: /usr/share/nginx/html/index.html
-              subPath: index.html
+              mountPath: /usr/share/nginx/html
           resources:
             limits:
               cpu: 200m
@@ -47,7 +79,10 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
+
       volumes:
-        - name: html-volume
+        - name: template-volume
           configMap:
             name: nginx-dashboard-2
+        - name: html-volume
+          emptyDir: {}

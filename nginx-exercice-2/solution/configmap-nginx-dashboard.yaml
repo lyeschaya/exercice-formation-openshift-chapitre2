@@ -1,0 +1,346 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-dashboard-2
+  namespace: formation-openshift
+data:
+  index.html.template: |
+    <!DOCTYPE html>
+    <html lang="fr" data-theme="light">
+    <head>
+        <meta charset="UTF-8">
+        <title>Neutron IT - Dashboard</title>
+        <style>
+            :root[data-theme="light"] {
+                --bg:#f8fafc; --card:#ffffff; --border:#e2e8f0; --text:#0f172a; --muted:#64748b;
+                --input-bg:#f1f5f9; --primary:#4f46e5; --primary-light:#eef2ff;
+                --danger:#e11d48; --danger-light:#fff1f2; --success:#16a34a; --success-light:#f0fdf4;
+                --warning:#d97706; --warning-light:#fffbeb;
+            }
+            :root[data-theme="dark"] {
+                --bg:#0f172a; --card:#1e293b; --border:#334155; --text:#f1f5f9; --muted:#94a3b8;
+                --input-bg:#0f172a; --primary:#818cf8; --primary-light:#1e1b4b;
+                --danger:#fb7185; --danger-light:#1f1019; --success:#4ade80; --success-light:#052e16;
+                --warning:#fbbf24; --warning-light:#1c1002;
+            }
+            * { margin:0; padding:0; box-sizing:border-box; transition:background-color .2s,color .2s,border-color .2s; }
+            body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; min-height:100vh; }
+            .header { background:var(--card); padding:16px 40px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); gap:12px; flex-wrap:wrap; }
+            .brand { font-size:1.1rem; font-weight:800; letter-spacing:-0.025em; }
+            .header-right { display:flex; align-items:center; gap:10px; }
+            .nginx-pill { background:var(--success-light); color:var(--success); font-size:0.7rem; font-weight:700; padding:4px 10px; border-radius:999px; border:1px solid var(--success); }
+            .theme-btn { background:var(--input-bg); border:1px solid var(--border); border-radius:999px; padding:5px 10px; cursor:pointer; font-size:1rem; color:var(--text); }
+            .container { max-width:680px; margin:32px auto; padding:0 20px 60px; }
+            h1 { font-size:1.6rem; font-weight:700; margin-bottom:4px; }
+            .subtitle { font-size:0.83rem; color:var(--muted); margin-bottom:24px; }
+            .card { background:var(--card); border-radius:16px; padding:22px 24px; margin-bottom:18px; border:1px solid var(--border); }
+            .card-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+            .badge { padding:3px 8px; border-radius:4px; color:white; font-size:0.7rem; font-weight:700; }
+            .bg-cm { background:var(--primary); }
+            .bg-s  { background:var(--danger); }
+            .card-title { font-size:0.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+            .item { display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--border); gap:16px; }
+            .item:last-of-type { border-bottom:none; }
+            .item-left {}
+            .key { font-family:'Monaco','Menlo',monospace; font-size:0.82rem; font-weight:600; }
+            .key-source { font-size:0.7rem; color:var(--muted); margin-top:2px; }
+            .val { font-size:0.88rem; font-weight:500; padding:4px 10px; border-radius:6px; max-width:280px; word-break:break-all; text-align:right; }
+            .val-cm { background:var(--primary-light); color:var(--primary); }
+            .val-s  { background:var(--danger-light); color:var(--danger); }
+            .edit-row { display:flex; gap:8px; margin-top:14px; }
+            .edit-input { flex:1; background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:0.88rem; color:var(--text); outline:none; }
+            .edit-input:focus { border-color:var(--primary); }
+            .btn { padding:8px 16px; border-radius:8px; font-size:0.82rem; font-weight:600; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+            .btn:hover { opacity:.85; }
+            .btn:active { transform:scale(.97); }
+            .btn:disabled { opacity:.5; cursor:not-allowed; }
+            .btn-primary { background:var(--primary); color:white; }
+            .btn-danger  { background:var(--danger); color:white; }
+            .btn-ghost   { background:var(--input-bg); color:var(--text); border:1px solid var(--border); }
+            .status-banner { border-radius:10px; padding:11px 15px; margin-bottom:18px; font-size:0.83rem; font-weight:500; display:flex; align-items:center; gap:10px; }
+            .s-ok   { background:var(--success-light); color:var(--success); border:1px solid var(--success); }
+            .s-warn { background:var(--warning-light); color:var(--warning); border:1px solid var(--warning); }
+            .s-info { background:var(--primary-light); color:var(--primary); border:1px solid var(--primary); }
+            .dot { width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0; }
+            .diff-block { margin-top:12px; border-radius:8px; overflow:hidden; border:1px solid var(--border); font-size:0.82rem; font-family:monospace; }
+            .diff-old { display:flex; gap:8px; padding:6px 12px; background:var(--danger-light); color:var(--danger); }
+            .diff-new { display:flex; gap:8px; padding:6px 12px; background:var(--success-light); color:var(--success); }
+            .diff-sym { width:14px; flex-shrink:0; font-weight:700; }
+            .restart-card { background:var(--card); border-radius:16px; padding:20px 24px; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+            .restart-info p { font-size:0.88rem; font-weight:500; margin-bottom:3px; }
+            .restart-info span { font-size:0.78rem; color:var(--muted); }
+            .log-box { background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; font-family:monospace; font-size:0.78rem; color:var(--muted); margin-top:12px; min-height:44px; max-height:160px; overflow-y:auto; }
+            .log-line { margin-bottom:3px; line-height:1.5; }
+            .l-ok   { color:var(--success); }
+            .l-warn { color:var(--warning); }
+            .l-err  { color:var(--danger); }
+            .l-info { color:var(--primary); }
+            .spinner { display:inline-block; width:13px; height:13px; border:2px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; }
+            @keyframes spin { to { transform:rotate(360deg); } }
+            .api-section { background:var(--card); border-radius:16px; padding:18px 24px; border:1px solid var(--border); margin-bottom:18px; }
+            .api-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+            .api-label { font-size:0.78rem; color:var(--muted); width:80px; flex-shrink:0; }
+            .api-input { flex:1; background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:6px 10px; font-size:0.82rem; color:var(--text); outline:none; font-family:monospace; }
+            .api-input:focus { border-color:var(--primary); }
+            .section-lbl { font-size:0.73rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:12px; }
+            .footer { text-align:center; color:var(--muted); font-size:0.72rem; margin-top:36px; }
+            .hint { font-size:0.75rem; color:var(--muted); margin-top:6px; }
+        </style>
+    </head>
+    <body>
+    <header class="header">
+        <div class="brand">NEUTRON IT</div>
+        <div class="header-right">
+            <div class="nginx-pill">NGINX SERVED</div>
+            <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Dashboard Configuration</h1>
+        <p class="subtitle">ConfigMap &amp; Secret — exercice 2 OpenShift</p>
+
+        <div id="status-banner" class="status-banner s-info">
+            <div class="dot"></div>
+            <span id="status-text">Entre l'URL API et le token pour activer les fonctionnalités live</span>
+        </div>
+
+        <!-- Connexion API -->
+        <div class="api-section" id="api-section">
+            <div class="section-lbl">Connexion API OpenShift</div>
+            <div class="api-row">
+                <span class="api-label">API URL</span>
+                <input class="api-input" id="api-url" type="text" placeholder="https://api.ton-cluster:6443" value="${OPENSHIFT_API_URL}">
+            </div>
+            <div class="api-row">
+                <span class="api-label">Token</span>
+                <input class="api-input" id="api-token" type="password" placeholder="coller oc whoami -t" value="${SA_TOKEN}">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+                <button class="btn btn-primary" onclick="connectAPI()">
+                    <span id="connect-spinner" style="display:none" class="spinner"></span>
+                    Connecter
+                </button>
+                <button class="btn btn-ghost" onclick="document.getElementById('api-section').style.display='none'">Masquer</button>
+            </div>
+        </div>
+
+        <!-- ConfigMap card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="badge bg-cm">CM</span>
+                <span class="card-title">ConfigMap: nginx-config-2</span>
+            </div>
+
+            <div class="item">
+                <div class="item-left">
+                    <div class="key">APP_MESSAGE</div>
+                    <div class="key-source">Pod actuel — valeur au dernier démarrage</div>
+                </div>
+                <span class="val val-cm" id="running-val">${APP_MESSAGE}</span>
+            </div>
+
+            <div class="item">
+                <div class="item-left">
+                    <div class="key">APP_MESSAGE</div>
+                    <div class="key-source">ConfigMap live — valeur stockée maintenant</div>
+                </div>
+                <span class="val val-cm" id="live-val" style="opacity:.4">—</span>
+            </div>
+
+            <div id="diff-block" style="display:none;" class="diff-block">
+                <div class="diff-old"><span class="diff-sym">−</span><span id="diff-old-val"></span></div>
+                <div class="diff-new"><span class="diff-sym">+</span><span id="diff-new-val"></span></div>
+            </div>
+
+            <div class="edit-row">
+                <input class="edit-input" id="new-message" type="text" placeholder="Nouveau message...">
+                <button class="btn btn-primary" onclick="saveMessage()">
+                    <span id="save-spinner" style="display:none" class="spinner"></span>
+                    Sauvegarder
+                </button>
+            </div>
+            <p class="hint">Sauvegarde uniquement le ConfigMap. La page affiche encore l'ancienne valeur jusqu'au redémarrage des pods.</p>
+        </div>
+
+        <!-- Secret card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="badge bg-s">S</span>
+                <span class="card-title">Secret: nginx-secret-2</span>
+            </div>
+            <div class="item">
+                <div class="item-left">
+                    <div class="key">USERNAME</div>
+                    <div class="key-source">from Secret → USERNAME</div>
+                </div>
+                <span class="val val-s">${USERNAME}</span>
+            </div>
+            <div class="item">
+                <div class="item-left">
+                    <div class="key">PASSWORD</div>
+                    <div class="key-source">from Secret → PASSWORD</div>
+                </div>
+                <span class="val val-s">••••••••</span>
+            </div>
+        </div>
+
+        <!-- Restart -->
+        <div class="restart-card">
+            <div class="restart-info">
+                <p>Rollout restart</p>
+                <span id="restart-hint">Redémarre les pods → l'init container relit le ConfigMap</span>
+            </div>
+            <button class="btn btn-danger" onclick="restartPods()" id="restart-btn">
+                <span id="restart-spinner" style="display:none" class="spinner"></span>
+                Redémarrer les pods
+            </button>
+        </div>
+
+        <div class="log-box" id="log-box">
+            <div class="log-line l-info">[init] Dashboard prêt. Connecte l'API pour activer les fonctionnalités.</div>
+        </div>
+
+        <footer class="footer">Neutron IT | OpenShift Lab 2026</footer>
+    </div>
+
+    <script>
+        const RUNNING_MESSAGE = "${APP_MESSAGE}";
+        const RUNNING_USERNAME = "${USERNAME}";
+        let API_URL = "${OPENSHIFT_API_URL}";
+        let TOKEN = "${SA_TOKEN}";
+        const NS = "formation-openshift";
+        const CM = "nginx-config-2";
+        const DEPLOY = "nginx-unprivileged-2";
+        let connected = false;
+        let liveMsg = null;
+
+        function t() { return new Date().toLocaleTimeString("fr-FR"); }
+
+        function log(msg, type) {
+            const box = document.getElementById("log-box");
+            const d = document.createElement("div");
+            d.className = "log-line" + (type ? " l-"+type : "");
+            d.textContent = "["+t()+"] "+msg;
+            box.appendChild(d);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function setBanner(text, type) {
+            document.getElementById("status-banner").className = "status-banner s-"+type;
+            document.getElementById("status-text").textContent = text;
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const dark = html.getAttribute("data-theme") === "dark";
+            html.setAttribute("data-theme", dark ? "light" : "dark");
+            document.getElementById("theme-btn").textContent = dark ? "🌙" : "☀️";
+        }
+
+        async function apiCall(path, method, body) {
+            const opts = {
+                method: method || "GET",
+                headers: {
+                    "Authorization": "Bearer "+TOKEN,
+                    "Content-Type": "application/strategic-merge-patch+json",
+                    "Accept": "application/json"
+                }
+            };
+            if (body) opts.body = JSON.stringify(body);
+            const r = await fetch(API_URL+path, opts);
+            if (!r.ok) throw new Error(r.status+" — "+(await r.text()).slice(0,120));
+            return r.json();
+        }
+
+        async function connectAPI() {
+            API_URL = document.getElementById("api-url").value.trim();
+            TOKEN   = document.getElementById("api-token").value.trim();
+            if (!API_URL || !TOKEN) { log("URL et token requis.", "err"); return; }
+            document.getElementById("connect-spinner").style.display = "inline-block";
+            setBanner("Connexion en cours...", "info");
+            log("Connexion à "+API_URL, "info");
+            await fetchLive();
+            document.getElementById("connect-spinner").style.display = "none";
+        }
+
+        async function fetchLive() {
+            try {
+                const cm = await apiCall("/api/v1/namespaces/"+NS+"/configmaps/"+CM);
+                liveMsg = cm.data.APP_MESSAGE || "";
+                document.getElementById("live-val").textContent = liveMsg;
+                document.getElementById("live-val").style.opacity = "1";
+                connected = true;
+                document.getElementById("api-section").style.display = "none";
+                log("ConfigMap chargé. APP_MESSAGE = \""+liveMsg+"\"", "ok");
+                updateDiff();
+            } catch(e) {
+                log("Erreur : "+e.message, "err");
+                setBanner("Erreur — vérifie l'URL et le token", "warn");
+            }
+        }
+
+        function updateDiff() {
+            const diff = document.getElementById("diff-block");
+            if (liveMsg !== null && liveMsg !== RUNNING_MESSAGE) {
+                document.getElementById("diff-old-val").textContent = RUNNING_MESSAGE + "   ← pod actuel";
+                document.getElementById("diff-new-val").textContent = liveMsg + "   ← ConfigMap (nouveau)";
+                diff.style.display = "block";
+                setBanner("ConfigMap modifié — redémarre les pods pour appliquer", "warn");
+                document.getElementById("restart-hint").textContent = "Le ConfigMap a changé mais le pod affiche encore l'ancienne valeur. Redémarre pour appliquer.";
+            } else {
+                diff.style.display = "none";
+                if (connected) {
+                    setBanner("Pod à jour — valeur live correspond au pod actuel", "ok");
+                    document.getElementById("restart-hint").textContent = "Redémarre les pods → l'init container relit le ConfigMap";
+                }
+            }
+        }
+
+        async function saveMessage() {
+            if (!connected) { log("Connecte d'abord l'API.", "warn"); return; }
+            const msg = document.getElementById("new-message").value.trim();
+            if (!msg) { log("Message vide, annulé.", "warn"); return; }
+            document.getElementById("save-spinner").style.display = "inline-block";
+            log("Sauvegarde : \""+msg+"\"", "info");
+            try {
+                await apiCall("/api/v1/namespaces/"+NS+"/configmaps/"+CM, "PATCH", {data:{APP_MESSAGE:msg}});
+                liveMsg = msg;
+                document.getElementById("live-val").textContent = liveMsg;
+                document.getElementById("new-message").value = "";
+                log("ConfigMap mis à jour. La page affiche encore \""+RUNNING_MESSAGE+"\" jusqu'au redémarrage.", "ok");
+                updateDiff();
+            } catch(e) {
+                log("Erreur sauvegarde : "+e.message, "err");
+            } finally {
+                document.getElementById("save-spinner").style.display = "none";
+            }
+        }
+
+        async function restartPods() {
+            if (!connected) { log("Connecte d'abord l'API.", "warn"); return; }
+            const btn = document.getElementById("restart-btn");
+            btn.disabled = true;
+            document.getElementById("restart-spinner").style.display = "inline-block";
+            log("Rollout restart en cours...", "info");
+            try {
+                const now = new Date().toISOString();
+                await apiCall("/apis/apps/v1/namespaces/"+NS+"/deployments/"+DEPLOY, "PATCH",
+                    {spec:{template:{metadata:{annotations:{"kubectl.kubernetes.io/restartedAt":now}}}}});
+                log("Rollout déclenché à "+now, "ok");
+                log("Pods en cours de redémarrage (~30s). Rafraîchis la page ensuite.", "warn");
+                setBanner("Pods en cours de redémarrage — rafraîchis la page dans ~30s", "info");
+            } catch(e) {
+                log("Erreur restart : "+e.message, "err");
+            } finally {
+                btn.disabled = false;
+                document.getElementById("restart-spinner").style.display = "none";
+            }
+        }
+
+        if (API_URL && API_URL !== "\${OPENSHIFT_API_URL}" && TOKEN && TOKEN !== "\${SA_TOKEN}") {
+            setTimeout(fetchLive, 500);
+        }
+    </script>
+    </body>
+    </html>
