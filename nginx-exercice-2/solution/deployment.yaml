@@ -16,7 +16,6 @@ spec:
         deployment: nginx-unprivileged-2
     spec:
       serviceAccountName: nginx-dashboard-sa
-
       initContainers:
         - name: envsubst
           image: registry.access.redhat.com/ubi9/ubi-minimal:latest
@@ -24,15 +23,12 @@ spec:
             - /bin/sh
             - -c
             - |
-              SA_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
               sed \
-                -e "s|\${APP_MESSAGE}|${APP_MESSAGE}|g" \
-                -e "s|\${USERNAME}|${USERNAME}|g" \
-                -e "s|\${OPENSHIFT_API_URL}|${OPENSHIFT_API_URL}|g" \
-                -e "s|\${SA_TOKEN}|${SA_TOKEN}|g" \
+                -e "s|TMPL_APP_MESSAGE|${APP_MESSAGE}|g" \
+                -e "s|TMPL_USERNAME|${USERNAME}|g" \
+                -e "s|TMPL_APIURL|${OPENSHIFT_API_URL}|g" \
                 /template/index.html.template > /html/index.html
-              echo "HTML genere: APP_MESSAGE=${APP_MESSAGE}"
-              echo "Taille: $(wc -c < /html/index.html) bytes"
+              echo "OK: $(wc -c < /html/index.html) bytes"
           env:
             - name: APP_MESSAGE
               valueFrom:
@@ -51,7 +47,6 @@ spec:
               mountPath: /template
             - name: html-volume
               mountPath: /html
-
       containers:
         - name: nginx-unprivileged-2
           image: nginxinc/nginx-unprivileged@sha256:731f382bbad9a874f9f27db9c82d9e671e603e2210386a8e2b6da36cf336fa75
@@ -83,7 +78,6 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-
       volumes:
         - name: template-volume
           configMap:

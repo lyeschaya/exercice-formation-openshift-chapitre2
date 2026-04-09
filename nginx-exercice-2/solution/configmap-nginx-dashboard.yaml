@@ -95,26 +95,26 @@ data:
             <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
         </div>
     </header>
-
+    
     <div class="container">
         <h1>Dashboard Configuration</h1>
         <p class="subtitle">ConfigMap &amp; Secret — exercice 2 OpenShift</p>
-
+    
         <div id="status-banner" class="status-banner s-info">
             <div class="dot"></div>
             <span id="status-text">Entre l'URL API et le token pour activer les fonctionnalités live</span>
         </div>
-
+    
         <!-- Connexion API -->
         <div class="api-section" id="api-section">
             <div class="section-lbl">Connexion API OpenShift</div>
             <div class="api-row">
                 <span class="api-label">API URL</span>
-                <input class="api-input" id="api-url" type="text" placeholder="https://api.ton-cluster:6443" value="${OPENSHIFT_API_URL}">
+                <input class="api-input" id="api-url" type="text" placeholder="https://api.ton-cluster:6443" value="TMPL_APIURL">
             </div>
             <div class="api-row">
                 <span class="api-label">Token</span>
-                <input class="api-input" id="api-token" type="password" placeholder="coller oc whoami -t" value="${SA_TOKEN}">
+                <input class="api-input" id="api-token" type="password" placeholder="coller oc whoami -t" value="TMPL_SATOKEN">
             </div>
             <div style="display:flex;gap:8px;margin-top:10px;">
                 <button class="btn btn-primary" onclick="connectAPI()">
@@ -124,22 +124,22 @@ data:
                 <button class="btn btn-ghost" onclick="document.getElementById('api-section').style.display='none'">Masquer</button>
             </div>
         </div>
-
+    
         <!-- ConfigMap card -->
         <div class="card">
             <div class="card-header">
                 <span class="badge bg-cm">CM</span>
                 <span class="card-title">ConfigMap: nginx-config-2</span>
             </div>
-
+    
             <div class="item">
                 <div class="item-left">
                     <div class="key">APP_MESSAGE</div>
                     <div class="key-source">Pod actuel — valeur au dernier démarrage</div>
                 </div>
-                <span class="val val-cm" id="running-val">${APP_MESSAGE}</span>
+                <span class="val val-cm" id="running-val">TMPL_APP_MESSAGE</span>
             </div>
-
+    
             <div class="item">
                 <div class="item-left">
                     <div class="key">APP_MESSAGE</div>
@@ -147,12 +147,12 @@ data:
                 </div>
                 <span class="val val-cm" id="live-val" style="opacity:.4">—</span>
             </div>
-
+    
             <div id="diff-block" style="display:none;" class="diff-block">
                 <div class="diff-old"><span class="diff-sym">−</span><span id="diff-old-val"></span></div>
                 <div class="diff-new"><span class="diff-sym">+</span><span id="diff-new-val"></span></div>
             </div>
-
+    
             <div class="edit-row">
                 <input class="edit-input" id="new-message" type="text" placeholder="Nouveau message...">
                 <button class="btn btn-primary" onclick="saveMessage()">
@@ -162,7 +162,7 @@ data:
             </div>
             <p class="hint">Sauvegarde uniquement le ConfigMap. La page affiche encore l'ancienne valeur jusqu'au redémarrage des pods.</p>
         </div>
-
+    
         <!-- Secret card -->
         <div class="card">
             <div class="card-header">
@@ -174,7 +174,7 @@ data:
                     <div class="key">USERNAME</div>
                     <div class="key-source">from Secret → USERNAME</div>
                 </div>
-                <span class="val val-s">${USERNAME}</span>
+                <span class="val val-s">TMPL_USERNAME</span>
             </div>
             <div class="item">
                 <div class="item-left">
@@ -184,7 +184,7 @@ data:
                 <span class="val val-s">••••••••</span>
             </div>
         </div>
-
+    
         <!-- Restart -->
         <div class="restart-card">
             <div class="restart-info">
@@ -196,27 +196,27 @@ data:
                 Redémarrer les pods
             </button>
         </div>
-
+    
         <div class="log-box" id="log-box">
             <div class="log-line l-info">[init] Dashboard prêt. Connecte l'API pour activer les fonctionnalités.</div>
         </div>
-
+    
         <footer class="footer">Neutron IT | OpenShift Lab 2026</footer>
     </div>
-
+    
     <script>
-        const RUNNING_MESSAGE = "${APP_MESSAGE}";
-        const RUNNING_USERNAME = "${USERNAME}";
-        let API_URL = "${OPENSHIFT_API_URL}";
-        let TOKEN = "${SA_TOKEN}";
+        const RUNNING_MESSAGE = "TMPL_APP_MESSAGE";
+        const RUNNING_USERNAME = "TMPL_USERNAME";
+        let API_URL = "TMPL_APIURL";
+        let TOKEN = "TMPL_SATOKEN";
         const NS = "formation-openshift";
         const CM = "nginx-config-2";
         const DEPLOY = "nginx-unprivileged-2";
         let connected = false;
         let liveMsg = null;
-
+    
         function t() { return new Date().toLocaleTimeString("fr-FR"); }
-
+    
         function log(msg, type) {
             const box = document.getElementById("log-box");
             const d = document.createElement("div");
@@ -225,19 +225,19 @@ data:
             box.appendChild(d);
             box.scrollTop = box.scrollHeight;
         }
-
+    
         function setBanner(text, type) {
             document.getElementById("status-banner").className = "status-banner s-"+type;
             document.getElementById("status-text").textContent = text;
         }
-
+    
         function toggleTheme() {
             const html = document.documentElement;
             const dark = html.getAttribute("data-theme") === "dark";
             html.setAttribute("data-theme", dark ? "light" : "dark");
             document.getElementById("theme-btn").textContent = dark ? "🌙" : "☀️";
         }
-
+    
         async function apiCall(path, method, body) {
             const opts = {
                 method: method || "GET",
@@ -252,7 +252,7 @@ data:
             if (!r.ok) throw new Error(r.status+" — "+(await r.text()).slice(0,120));
             return r.json();
         }
-
+    
         async function connectAPI() {
             API_URL = document.getElementById("api-url").value.trim();
             TOKEN   = document.getElementById("api-token").value.trim();
@@ -263,7 +263,7 @@ data:
             await fetchLive();
             document.getElementById("connect-spinner").style.display = "none";
         }
-
+    
         async function fetchLive() {
             try {
                 const cm = await apiCall("/api/v1/namespaces/"+NS+"/configmaps/"+CM);
@@ -279,7 +279,7 @@ data:
                 setBanner("Erreur — vérifie l'URL et le token", "warn");
             }
         }
-
+    
         function updateDiff() {
             const diff = document.getElementById("diff-block");
             if (liveMsg !== null && liveMsg !== RUNNING_MESSAGE) {
@@ -296,7 +296,7 @@ data:
                 }
             }
         }
-
+    
         async function saveMessage() {
             if (!connected) { log("Connecte d'abord l'API.", "warn"); return; }
             const msg = document.getElementById("new-message").value.trim();
@@ -316,7 +316,7 @@ data:
                 document.getElementById("save-spinner").style.display = "none";
             }
         }
-
+    
         async function restartPods() {
             if (!connected) { log("Connecte d'abord l'API.", "warn"); return; }
             const btn = document.getElementById("restart-btn");
@@ -337,8 +337,8 @@ data:
                 document.getElementById("restart-spinner").style.display = "none";
             }
         }
-
-        if (API_URL && API_URL !== "\${OPENSHIFT_API_URL}" && TOKEN && TOKEN !== "\${SA_TOKEN}") {
+    
+        if (API_URL && API_URL !== "\TMPL_APIURL" && TOKEN && TOKEN !== "\TMPL_SATOKEN") {
             setTimeout(fetchLive, 500);
         }
     </script>
