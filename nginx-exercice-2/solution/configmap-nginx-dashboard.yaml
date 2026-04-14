@@ -39,8 +39,22 @@ data:
             .flash{animation:flash .6s ease}
             @keyframes flash{0%{opacity:.1}100%{opacity:1}}
             .pw-row{display:flex;align-items:center;gap:8px}
-            .eye{background:none;border:none;cursor:pointer;font-size:.9rem;padding:2px;color:var(--muted)}
-            .eye:hover{color:var(--text)}
+            .eye-btn{
+                background:var(--bg);
+                border:1px solid var(--border);
+                border-radius:8px;
+                cursor:pointer;
+                padding:5px 10px;
+                color:var(--muted);
+                font-size:.75rem;
+                font-weight:600;
+                display:flex;
+                align-items:center;
+                gap:5px;
+                transition:all .15s;
+            }
+            .eye-btn:hover{background:var(--card);border-color:var(--danger);color:var(--danger)}
+            .eye-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
             .footer{text-align:center;color:var(--muted);font-size:.72rem;margin-top:36px}
         </style>
     </head>
@@ -79,7 +93,10 @@ data:
                 <span class="key">PASSWORD</span>
                 <div class="pw-row">
                     <span class="val val-s" id="password">&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;</span>
-                    <button class="eye" onclick="togglePw()" id="eye">&#128065;</button>
+                    <button class="eye-btn" onclick="togglePw()" id="eye-btn">
+                        <svg id="eye-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span id="eye-label">Afficher</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -88,7 +105,14 @@ data:
     <script>
         var realPw="",showPw=false,lastMsg="";
         function toggleTheme(){var h=document.documentElement,d=h.getAttribute("data-theme")==="dark";h.setAttribute("data-theme",d?"light":"dark");document.getElementById("tbtn").textContent=d?"🌙":"☀️";}
-        function togglePw(){showPw=!showPw;document.getElementById("password").textContent=showPw?realPw:"••••••••";document.getElementById("eye").textContent=showPw?"🙈":"👁";}
+        function togglePw(){
+            showPw=!showPw;
+            document.getElementById("password").textContent=showPw?realPw:"••••••••";
+            document.getElementById("eye-label").textContent=showPw?"Masquer":"Afficher";
+            var icon=document.getElementById("eye-icon");
+            if(showPw){icon.innerHTML='<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';}
+            else{icon.innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';}
+        }
         function fetchMsg(){fetch("/config/APP_MESSAGE?t="+Date.now()).then(function(r){return r.text();}).then(function(v){v=v.trim();if(v!==lastMsg){var el=document.getElementById("msg");el.textContent=v;el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash");lastMsg=v;}}).catch(function(){});}
         function fetchUsername(){fetch("/config/USERNAME?t="+Date.now()).then(function(r){return r.text();}).then(function(v){document.getElementById("username").textContent=v.trim();}).catch(function(){});}
         function fetchPassword(){fetch("/config/PASSWORD?t="+Date.now()).then(function(r){return r.text();}).then(function(v){realPw=v.trim();if(showPw)document.getElementById("password").textContent=realPw;}).catch(function(){});}
