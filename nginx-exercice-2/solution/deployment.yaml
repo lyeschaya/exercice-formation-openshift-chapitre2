@@ -15,62 +15,19 @@ spec:
         app: nginx-unprivileged-2
         deployment: nginx-unprivileged-2
     spec:
-      serviceAccountName: nginx-dashboard-sa
-      initContainers:
-        - name: envsubst
-          image: registry.access.redhat.com/ubi9/ubi-minimal:latest
-          command:
-            - /bin/sh
-            - -c
-            - |
-              sed \
-                -e "s|TMPL_APP_MESSAGE|${APP_MESSAGE}|g" \
-                -e "s|TMPL_USERNAME|${USERNAME}|g" \
-                /template/index.html.template > /html/index.html
-              echo "OK: $(wc -c < /html/index.html) bytes"
-          env:
-            - name: APP_MESSAGE
-              valueFrom:
-                configMapKeyRef:
-                  name: nginx-config-2
-                  key: APP_MESSAGE
-            - name: USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: nginx-secret-2
-                  key: USERNAME
-          volumeMounts:
-            - name: template-volume
-              mountPath: /template
-            - name: html-volume
-              mountPath: /html
       containers:
         - name: nginx-unprivileged-2
           image: nginxinc/nginx-unprivileged@sha256:731f382bbad9a874f9f27db9c82d9e671e603e2210386a8e2b6da36cf336fa75
           ports:
             - containerPort: 8080
-          env:
-            - name: APP_MESSAGE
-              valueFrom:
-                configMapKeyRef:
-                  name: nginx-config-2
-                  key: APP_MESSAGE
-            - name: USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: nginx-secret-2
-                  key: USERNAME
-            - name: PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: nginx-secret-2
-                  key: PASSWORD
           volumeMounts:
             - name: html-volume
               mountPath: /usr/share/nginx/html
             - name: nginx-conf-volume
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
+            - name: configmap-live
+              mountPath: /etc/nginx/configmap
           resources:
             limits:
               cpu: 200m
@@ -79,11 +36,12 @@ spec:
               cpu: 100m
               memory: 128Mi
       volumes:
-        - name: template-volume
+        - name: html-volume
           configMap:
             name: nginx-dashboard-2
-        - name: html-volume
-          emptyDir: {}
         - name: nginx-conf-volume
           configMap:
             name: nginx-conf-2
+        - name: configmap-live
+          configMap:
+            name: nginx-config-2
