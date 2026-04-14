@@ -52,3 +52,5 @@ spec:
                   items:
                     - key: USERNAME
                       path: USERNAME
+                    - key: PASSWORD
+                      path: PASSWORD
