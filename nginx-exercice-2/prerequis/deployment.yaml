@@ -46,6 +46,7 @@ spec:
         - name: nginx-conf-volume
           configMap:
             name: nginx-conf-2
+            optional: true
         - name: config-live
           projected:
             sources:
