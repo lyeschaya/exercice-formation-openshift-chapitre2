@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: monitoring-sa-pod-reader
+  namespace: paris-user-ns
+subjects:
+  - kind: ServiceAccount
+    name: monitoring-sa
+    namespace: paris-user-ns
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io

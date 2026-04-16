@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: paris-kube-pod-not-ready
+  namespace: openshift-monitoring
+spec:
+  groups:
+    - name: pod-readiness-rules
+      rules:
+        - alert: YOURCITY-OpenshiftPodNotHealthy
+          expr: sum by (namespace, pod) (kube_pod_status_phase{namespace="YOURCITY-user-ns", phase=~"Pending|Unknown|Failed|Error"}) > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is not healthy"
+            description: |
+              The pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-running state for over 1 minute.
+              VALUE = {{ $value }}
+              LABELS = {{ $labels }}

@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quota-demo-app
+  namespace: <CITY>-user-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quota-demo-app
+  template:
+    metadata:
+      labels:
+        app: quota-demo-app
+    spec:
+      containers:
+      - name: limite-container
+        image: registry.access.redhat.com/ubi8/ubi:latest
+        command: ["sh", "-c", "while true; do echo Hello OpenShift; sleep 5; done"]
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "300m"
+          limits:
+            memory: "256Mi"
+            cpu: "600m"

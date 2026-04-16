@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: failed-pod-demo
+  namespace: paris-user-ns
+spec:
+  containers:
+    - name: failed-container
+      image: busybox
+      command: ["/bin/sh", "-c", "exit 1"]
+  restartPolicy: Never

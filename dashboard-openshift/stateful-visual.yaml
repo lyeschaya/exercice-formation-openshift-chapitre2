@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-headless
+  namespace: paris-user-ns
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: web
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+  namespace: paris-user-ns
+spec:
+  serviceName: "web-headless"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: apache
+        image: registry.access.redhat.com/ubi8/httpd-24:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: "20m"
+            memory: "64Mi"
+          limits:
+            cpu: "100m"
+            memory: "128Mi"
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/html
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-public
+  namespace: paris-user-ns
+spec:
+  selector:
+    app: web
+  ports:
+  - port: 80
+    targetPort: 8080
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: web-route
+  namespace: paris-user-ns
+  annotations:
+    # Désactive les cookies de session pour voir l'alternance entre les pods
+    haproxy.router.openshift.io/disable_cookies: 'true'
+spec:
+  to:
+    kind: Service
+    name: web-public
+  tls:
+    termination: edge

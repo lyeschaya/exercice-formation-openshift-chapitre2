@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: welcome-config
+data:
+  welcome_message: "Bienvenue à notre nouvelle application déployée avec OpenShift !"
+  app_mode: "development"

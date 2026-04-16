@@ -1,11 +1,12 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: nginx-route-2
+  name: welcome-route
+  namespace: paris-user-ns
 spec:
   to:
     kind: Service
-    name: nginx-unprivileged-2
+    name: welcome-svc
   port:
     targetPort: 8080
   tls:
