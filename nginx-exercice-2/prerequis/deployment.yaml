@@ -26,8 +26,8 @@ spec:
             - name: nginx-conf-volume
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
-            - name: config-live
-              mountPath: /etc/nginx/configmap
+            # TODO: Monter le ConfigMap nginx-config-2 et le Secret nginx-secret-2
+            # dans /etc/nginx/configmap via un projected volume
           resources:
             limits:
               cpu: 200m
@@ -42,15 +42,4 @@ spec:
         - name: nginx-conf-volume
           configMap:
             name: nginx-conf-2
-        - name: config-live
-          projected:
-            sources:
-              - configMap:
-                  name: nginx-config-2
-              - secret:
-                  name: nginx-secret-2
-                  items:
-                    - key: USERNAME
-                      path: USERNAME
-                    - key: PASSWORD
-                      path: PASSWORD
+        # TODO: Ajouter un volume projected combinant nginx-config-2 et nginx-secret-2
