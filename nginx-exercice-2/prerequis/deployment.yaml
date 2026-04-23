@@ -26,8 +26,8 @@ spec:
             - name: nginx-conf-volume
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
-            # TODO: Monter le ConfigMap nginx-config-2 et le Secret nginx-secret-2
-            # dans /etc/nginx/configmap via un projected volume
+            - name: config-live
+              mountPath: /etc/nginx/configmap
           resources:
             limits:
               cpu: 200m
@@ -42,4 +42,22 @@ spec:
         - name: nginx-conf-volume
           configMap:
             name: nginx-conf-2
-        # TODO: Ajouter un volume projected combinant nginx-config-2 et nginx-secret-2
+        # Projected volume pré-configuré avec "optional: true".
+        # Le pod démarre même si nginx-config-2 ou nginx-secret-2
+        # n'existent pas encore. Le stagiaire les crée depuis la console
+        # et les fichiers apparaissent automatiquement dans
+        # /etc/nginx/configmap/ (sync kubelet ~30-60s).
+        - name: config-live
+          projected:
+            sources:
+              - configMap:
+                  name: nginx-config-2
+                  optional: true
+              - secret:
+                  name: nginx-secret-2
+                  optional: true
+                  items:
+                    - key: USERNAME
+                      path: USERNAME
+                    - key: PASSWORD
+                      path: PASSWORD

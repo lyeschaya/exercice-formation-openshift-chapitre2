@@ -125,8 +125,8 @@ data:
             showPw=!showPw;
             var pwEl=document.getElementById("password");
             if(showPw){
-                pwEl.textContent=realPw||EMPTY_TEXT;
-                if(!realPw){setEmpty(pwEl);}
+                if(realPw){setFilled(pwEl,"val-s");pwEl.textContent=realPw;}
+                else{setEmpty(pwEl);}
             } else {
                 pwEl.textContent="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022";
                 if(realPw){setFilled(pwEl,"val-s");}
@@ -185,6 +185,7 @@ data:
         }
         fetchMsg();fetchUsername();fetchPassword();
         setInterval(fetchMsg,15000);
+        setInterval(fetchUsername,15000);
         setInterval(fetchPassword,15000);
     </script>
     </body>
